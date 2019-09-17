@@ -218,15 +218,15 @@ void loadImages(Juego *juego){
 	SDL_Surface *fruit3Surface = NULL;
 
 	//Carga de imágenes
-	backSurface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/back.png");
-	dkjrSurface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/dkjr.png");
-	crocBlue1Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/crocBlue1.png");
-	crocBlue2Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/crocBlue2.png");
-	crocRed1Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/crocRed1.png");
-	crocRed2Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/crocRed2.png");
-	fruit1Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/fruit1.png");
-	fruit2Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/fruit2.png");
-	fruit3Surface = IMG_Load("/home/nayib/MEGA/Programación/Proyectos/C/DonCEyKongJr_C/DKJr/Resources/fruit3.png");
+	backSurface = IMG_Load("Resources/back.png");
+	dkjrSurface = IMG_Load("Resources/dkjr.png");
+	crocBlue1Surface = IMG_Load("Resources/crocBlue1.png");
+	crocBlue2Surface = IMG_Load("Resources/crocBlue2.png");
+	crocRed1Surface = IMG_Load("Resources/crocRed1.png");
+	crocRed2Surface = IMG_Load("Resources/crocRed2.png");
+	fruit1Surface = IMG_Load("Resources/fruit1.png");
+	fruit2Surface = IMG_Load("Resources/fruit2.png");
+	fruit3Surface = IMG_Load("Resources/fruit3.png");
 
 	//Si falla la carga de la imagen
 	if (dkjrSurface == NULL){
