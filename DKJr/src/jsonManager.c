@@ -64,7 +64,7 @@ void observeGame(char* code){
  * para obtener las colisiones y que este devuelva todo por graficar
  * de vuelta en el cliente.
  */
-void updateGame(int posx, int posy){
+void updateGame(char* code, int posx, int posy){
 
 	//Paso de int a char[] para ser ingresado en JSON
 	char px[10];
@@ -76,16 +76,22 @@ void updateGame(int posx, int posy){
 	json_object *jObj = json_object_new_object();
 
 	///Variables para agregar como Key y Data
-	char* jsonKEYx = "POSX";
-	char* jsonDatax =  px; //Este dato es el codigo del juego al que se desea unir
-	char* jsonKEYy = "POSY";
-	char* jsonDatay =  py; //Este dato es el codigo del juego al que se desea unir
+	char* jsonKeyCode = "CODE";
+	char* jsonDataCode = code;  //Este dato es el codigo del juego que se modificara
+	char* jsonKeyX = "POSX";
+	char* jsonDataX =  px; //Este dato es el movimiento en x
+	char* jsonKeyY = "POSY";
+	char* jsonDataY =  py; //Este dato es el movimiento en y
+
 
 	///Se agrega la informacion en el JSON
-	json_object *jstringx = json_object_new_string(jsonDatax);
-	json_object_object_add(jObj,jsonKEYx, jstringx);
-	json_object *jstringy = json_object_new_string(jsonDatay);
-	json_object_object_add(jObj,jsonKEYy, jstringy);
+	json_object *jstringCode = json_object_new_string(jsonDataCode);
+	json_object_object_add(jObj,jsonKeyCode, jstringCode);
+	json_object *jstringX = json_object_new_string(jsonDataX);
+	json_object_object_add(jObj,jsonKeyX, jstringX);
+	json_object *jstringY = json_object_new_string(jsonDataY);
+	json_object_object_add(jObj,jsonKeyY, jstringY);
+
 
 	///Se envia el JSON a través de la función sendJSON
 	sendJSON(jObj);
