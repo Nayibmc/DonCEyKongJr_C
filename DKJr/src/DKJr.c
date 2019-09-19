@@ -2,6 +2,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
+
+
+
 typedef struct{
     int x, y;
 } DKJr;
@@ -318,27 +321,42 @@ void closeGame(SDL_Window *window, Juego *juego){
 	SDL_Quit();
 }
 
+#include "jsonManager.h"
+#include <json-c/json.h>
+
+
 int main(int argc, char *argv[]){
+
+	//PRUEBAS JSON MANAGEMENT
+	startGame();
+	observeGame("AXY87MJ6P9R8");
+
+
+
+
+
+
+	//INTERFAZ
+	/*
 	Juego juego;
 	SDL_Window *window = NULL;
-
 	initializeGame(window, &juego);
 	loadImages(&juego);
-
     // The window is open: enter program loop (see SDL_PollEvent)
     int done = 0;
     //Event loop
     while(!done){
 		//Check for events
 		done = processEvents(window, &juego);
-
 		//Render display
 		doRender(&juego);
-
 		//don't burn up the CPU
 		SDL_Delay(10);
     }
-
     closeGame(window, &juego);
+	*/
+
+
     return 0;
+
 }
