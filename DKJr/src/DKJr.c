@@ -330,6 +330,7 @@ int main(int argc, char *argv[]){
 	//PRUEBAS JSON MANAGEMENT
 	startGame();
 	observeGame("AXY87MJ6P9R8");
+	updateGame(200,362);
 
 
 

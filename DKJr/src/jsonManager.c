@@ -1,3 +1,6 @@
+#include "jsonManager.h"
+//#include <json-c/json.h>
+
 /*
  * jsonManager.c
  *
@@ -5,24 +8,9 @@
  *      Author: ruben
  */
 
-#include "jsonManager.h"
-#include <json-c/json.h>
 
-#define PORT 3550
-#define MAXDATASIZE 999999
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 
-/**
- * Envia el JSON al servidor con datos solicitados.
- * @param jObj
- * @return data, conection
- */
-
+/**************************************LOGICA**************************************/
 
 /**
  * Al presionar el botón de Iniciar:
@@ -71,30 +59,113 @@ void observeGame(char* code){
 }
 
 
+/**
+ * Recibe las posiciones actuales de DKJr y las envia al servidor
+ * para obtener las colisiones y que este devuelva todo por graficar
+ * de vuelta en el cliente.
+ */
+void updateGame(int posx, int posy){
+
+	//Paso de int a char[] para ser ingresado en JSON
+	char px[10];
+	char py[10];
+	sprintf(px,"%d", posx);
+	sprintf(py,"%d", posy);
+
+	///Objeto JSON por enviar
+	json_object *jObj = json_object_new_object();
+
+	///Variables para agregar como Key y Data
+	char* jsonKEYx = "POSX";
+	char* jsonDatax =  px; //Este dato es el codigo del juego al que se desea unir
+	char* jsonKEYy = "POSY";
+	char* jsonDatay =  py; //Este dato es el codigo del juego al que se desea unir
+
+	///Se agrega la informacion en el JSON
+	json_object *jstringx = json_object_new_string(jsonDatax);
+	json_object_object_add(jObj,jsonKEYx, jstringx);
+	json_object *jstringy = json_object_new_string(jsonDatay);
+	json_object_object_add(jObj,jsonKEYy, jstringy);
+
+	///Se envia el JSON a través de la función sendJSON
+	sendJSON(jObj);
+
+}
+
+/**************************************LOGICA**************************************/
 
 
 
+/*******************************MANEJO_DE_RESPUESTAS*******************************/
+
+/**
+ * Maneja el contenido del JSON con el Key: "GAME"
+ */
+void manageGame(json_object* jObj){
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "DKJR"
+ */
+void manageDKJr(json_object* jObj){
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "CROCODILES"
+ */
+void manageCrocodiles(json_object* jObj){
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "FRUITS"
+ */
+void manageFruits(json_object* jObj){
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "FRUITPOINTS"
+ */
+void manageFruitPoints(json_object* jObj){
+
+}
+
+/*******************************MANEJO_DE_RESPUESTAS*******************************/
+
+
+
+
+/*************************************SENDJSON*************************************/
+
+/**
+ * Envia el JSON deseado al servidor y espera su respuesta.
+ */
 int sendJSON(json_object *jObj){
 
+	//Torna el Objeto JSON a un char[] para ser enviado como tal
+	//al Servidor.
 	char* jsonToServer = json_object_to_json_string(jObj);
 
+	//TEST print
 	printf("\nsendJSON: ");
 	printf(jsonToServer);
-
 
     /********************************************************************/
     /********************************************************************/
 	/*Abre conexion a servidor*/
 	/*Probar si funciona*/
 
-		char* str;
-	    int fd, numbytes;
-	    struct sockaddr_in client;
+	char* str;
+	int fd, numbytes;
+	struct sockaddr_in client;
 
-	    //fd = socket(AF_INET, SOCK_STREAM, 0);
+	//fd = socket(AF_INET, SOCK_STREAM, 0);
 
-	    char sendBuff[MAXDATASIZE];
-	    char recvBuff[MAXDATASIZE];
+	char sendBuff[MAXDATASIZE];
+	char recvBuff[MAXDATASIZE];
 /*
 	    struct hostent *he;
 
@@ -136,44 +207,88 @@ int sendJSON(json_object *jObj){
 	    /********************************************************************/
 	    /********************************************************************/
 
-	    /*************/
-	    /*FOR TESTING*/
-	    //Pasa de *str a char[]
-	    //Para probar como llegaria del servidor
-	    strcpy(recvBuff, jsonToServer);
-	    /*FOR TESTING*/
-	    /*************/
+	/*************/
+	/*FOR TESTING*/
+	//Pasa de *str a char[]
+	//Para probar como llegaria del servidor
+	strcpy(recvBuff, jsonToServer);
+	/*FOR TESTING*/
+	/*************/
 
 	//Obtiene el json proveniente del servidor, lo parsea
     char* parsedJsonFromServer = json_tokener_parse(recvBuff);
-	struct json_object *dataFromJSON;
 
 
 	//Key: "PLAY"
 	//Dice si se puede iniciar el juego
-	json_object_object_get_ex(parsedJsonFromServer, "PLAY", &dataFromJSON);
-	if (json_object_get_string(dataFromJSON) != NULL) {
+	struct json_object *dataFromJSONPlay;
+	json_object_object_get_ex(parsedJsonFromServer, "PLAY", &dataFromJSONPlay);
+	if (json_object_get_string(dataFromJSONPlay) != NULL) {
 	    //estadoDelJuego = update();
 		printf("\nrecvBuff(\"PLAY\"): ");
-		printf(json_object_to_json_string(dataFromJSON));
+		printf(json_object_to_json_string(dataFromJSONPlay));
 		printf("\n");
 	}
 
 
 	//Key: "OBSERVE"
-		//Dice si se puede iniciar el juego
-		json_object_object_get_ex(parsedJsonFromServer, "OBSERVE", &dataFromJSON);
-		if (json_object_get_string(dataFromJSON) != NULL) {
-		    //estadoDelJuego = update();
-			printf("\nrecvBuff(\"OBSERVE\"): ");
-			printf(json_object_to_json_string(dataFromJSON));
-			printf("\n");
-		}
+	//Dice si se puede iniciar el juego
+	struct json_object *dataFromJSONObserve;
+	json_object_object_get_ex(parsedJsonFromServer, "OBSERVE", &dataFromJSONObserve);
+	if (json_object_get_string(dataFromJSONObserve) != NULL) {
+		//estadoDelJuego = update();
+		printf("\nrecvBuff(\"OBSERVE\"): ");
+		printf(json_object_to_json_string(dataFromJSONObserve));
+		printf("\n");
+	}
 
+	//Key: "GAME"
+	//JSONArray que contiene: Estado del Juego, Puntaje Total, Nivel Actual y Vidas Restantes
+	struct json_object *dataFromJSONGame;
+	json_object_object_get_ex(parsedJsonFromServer, "GAME", &dataFromJSONGame);
+	if (json_object_get_string(dataFromJSONGame) != NULL) {
+		manageGame(dataFromJSONGame);
+	}
+
+
+	//Key: "DKJR"
+	//JSONArray que contiene: Estado de DKJr, su Posicion en x, y su Posicion en y
+	struct json_object *dataFromJSONDKJr;
+	json_object_object_get_ex(parsedJsonFromServer, "DKJR", &dataFromJSONDKJr);
+	if (json_object_get_string(dataFromJSONDKJr) != NULL) {
+		manageDKJr(dataFromJSONDKJr);
+	}
+
+
+	//Key: "CROCODILES"
+	//JSONArray de JSONArrays que contienen: Color del Cocodrilo, su Posicion en x, y su Posicion en y
+	struct json_object *dataFromJSONCrocodiles;
+	json_object_object_get_ex(parsedJsonFromServer, "CROCODILES", &dataFromJSONCrocodiles);
+	if (json_object_get_string(dataFromJSONCrocodiles) != NULL) {
+		manageCrocodiles(dataFromJSONCrocodiles);
+	}
+
+
+	//Key: "FRUITS"
+	//JSONArray de JSONArrays que contienen: Tipo de Fruta, su Posicion en x, y su Posicion en y
+	struct json_object *dataFromJSONFruits;
+	json_object_object_get_ex(parsedJsonFromServer, "FRUITS", &dataFromJSONFruits);
+	if (json_object_get_string(dataFromJSONFruits) != NULL) {
+		manageFruits(dataFromJSONFruits);
+	}
+
+	//Key: "FRUITPOINTS"
+	//JSONArray de JSONArrays que contienen: Puntaje, su Posicion en x, y su Posicion en y
+	struct json_object *dataFromJSONFruitPoints;
+	json_object_object_get_ex(parsedJsonFromServer, "FRUITPOINTS", &dataFromJSONFruitPoints);
+	if (json_object_get_string(dataFromJSONFruitPoints) != NULL) {
+		manageFruitPoints(dataFromJSONFruitPoints);
+	}
 
 
 	return 0;
 
-
 }
+
+/*************************************SENDJSON*************************************/
 
