@@ -20,7 +20,8 @@ typedef struct{
 typedef struct{
 	//Dimensiones
 	int x, y;
-	int sizeMult; //depende del tamaño de la pantalla
+	int sizeMult; 	//depende del tamaño de la pantalla
+	int state; 	//0 es el menu, 1 es el juego, 2 es el observador
 
 	DKJr dkjr;
 	Fruit fruits[20];
@@ -29,6 +30,7 @@ typedef struct{
 	SDL_Renderer *renderer;
 
 	//Imágenes
+	SDL_Texture *menuImage;
 	SDL_Texture *backImage;
 	SDL_Texture *dkjrImage;
 	SDL_Texture *crocBlue1Image;
@@ -39,6 +41,8 @@ typedef struct{
 	SDL_Texture *fruit2Image;
 	SDL_Texture *fruit3Image;
 } Juego;
+
+int mouseInPlay();
 
 //Eventos (se cierra una ventana, se recibe input, etc.)
 int processEvents(SDL_Window *window, Juego *juego){
@@ -55,6 +59,7 @@ int processEvents(SDL_Window *window, Juego *juego){
         }
       }
       break;
+
       case SDL_KEYDOWN:{
         switch(event.key.keysym.sym){
           case SDLK_ESCAPE:
@@ -63,35 +68,82 @@ int processEvents(SDL_Window *window, Juego *juego){
         }
       }
       break;
+
       case SDL_QUIT:
         //quit out of the game
         done = 1;
       break;
     }
+
+    //Cuando se está en el menú y se presiona click izquierdo
+    if (juego->state == 0 && event.type == SDL_MOUSEBUTTONDOWN){
+    	if (event.button.button == SDL_BUTTON_LEFT){
+			int mouseX, mouseY;
+			SDL_GetMouseState(&mouseX, &mouseY);
+
+			if (mouseInPlay(juego, mouseX, mouseY)){
+			  juego->state = 1;
+			}
+    	}
+    }
   }
 
-  //Teclas direccionales
   const Uint8 *state = SDL_GetKeyboardState(NULL);
-  if(state[SDL_SCANCODE_LEFT]){
-    juego->dkjr.x -= 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_RIGHT]){
-    juego->dkjr.x += 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_UP]){
-    juego->dkjr.y -= 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_DOWN]){
-    juego->dkjr.y += 1*juego->sizeMult;
+
+  if (juego->state == 1){
+	  //Teclas direccionales
+	  if(state[SDL_SCANCODE_LEFT]){
+		  juego->dkjr.x -= 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_RIGHT]){
+		  juego->dkjr.x += 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_UP]){
+		  juego->dkjr.y -= 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_DOWN]){
+		  juego->dkjr.y += 1*juego->sizeMult;
+	  }
   }
 
   return done;
+}
+
+int mouseInPlay(Juego *juego, int mouseX, int mouseY){
+	int playXLeft = 12*8*juego->sizeMult;
+	int playXRight = 19*8*juego->sizeMult;
+	int playYDown = juego->y-(6*8*juego->sizeMult);
+	int playYUp = juego->y-(10*8*juego->sizeMult);
+
+	if ((mouseX > playXLeft && mouseX < playXRight) == 0){
+		return 0;
+	}
+	if ((mouseY > playYUp && mouseY < playYDown) == 0){
+		return 0;
+	}
+	return 1;
+}
+
+int mouseInObserver(Juego *juego, int mouseX, int mouseY){
+	int obsXLeft = 10*8*juego->sizeMult;
+	int obsXRight = 21*8*juego->sizeMult;
+	int obsYDown = juego->y-(2*8*juego->sizeMult);
+	int obsYUp = juego->y-(5*8*juego->sizeMult);
+
+	if ((mouseX > obsXLeft && mouseX < obsXRight) == 0){
+		return 0;
+	}
+	if ((mouseY > obsYUp && mouseY < obsYDown) == 0){
+		return 0;
+	}
+	return 1;
 }
 
 //Inicializa variables y funciones necesarias
 void initializeGame(SDL_Window *window, Juego *juego){
 	SDL_Init(SDL_INIT_VIDEO);   								//Se inicializa SDL2
 
+	juego->state = 0;
 	juego->sizeMult = 3;
 	juego->x = 248*juego->sizeMult;
 	juego->y = 216*juego->sizeMult;
@@ -156,47 +208,55 @@ void initializeGame(SDL_Window *window, Juego *juego){
 
 //Dibuja
 void doRender(Juego *juego){
-	//El fondo
-	SDL_Rect backRect = {0, 0, juego->x, juego->y};
-	SDL_RenderCopy(juego->renderer, juego->backImage, NULL, &backRect);
+	//
+	if (juego->state == 0){
+		SDL_Rect menuRect = {0, 0, juego->x, juego->y};
+		SDL_RenderCopy(juego->renderer, juego->menuImage, NULL, &menuRect);
+	}
 
-    //DKJr
-    SDL_Rect dkjrRect = {juego->dkjr.x, juego->dkjr.y, 25*juego->sizeMult, 16*juego->sizeMult};
-    SDL_RenderCopy(juego->renderer, juego->dkjrImage, NULL, &dkjrRect);
+	if (juego->state == 1){
+		//El fondo
+		SDL_Rect backRect = {0, 0, juego->x, juego->y};
+		SDL_RenderCopy(juego->renderer, juego->backImage, NULL, &backRect);
 
-    //Cocodrilos
-    for (int i = 0; juego->crocs[i].x != -1; i++){
-        SDL_Rect crocRect = {juego->crocs[i].x, juego->crocs[i].y, 15*juego->sizeMult, 8*juego->sizeMult};
+		//DKJr
+		SDL_Rect dkjrRect = {juego->dkjr.x, juego->dkjr.y, 25*juego->sizeMult, 16*juego->sizeMult};
+		SDL_RenderCopy(juego->renderer, juego->dkjrImage, NULL, &dkjrRect);
 
-    	switch (juego->crocs[i].type){
-    	case 'B':
-    		SDL_RenderCopy(juego->renderer, juego->crocBlue1Image, NULL, &crocRect);
-    		break;
-    	case 'b':
-			SDL_RenderCopy(juego->renderer, juego->crocBlue2Image, NULL, &crocRect);
-			break;
-		case 'R':
-			SDL_RenderCopy(juego->renderer, juego->crocRed1Image, NULL, &crocRect);
-			break;
-		case 'r':
-			SDL_RenderCopy(juego->renderer, juego->crocRed2Image, NULL, &crocRect);
-			break;
-    	}
-    }
+		//Cocodrilos
+		for (int i = 0; juego->crocs[i].x != -1; i++){
+			SDL_Rect crocRect = {juego->crocs[i].x, juego->crocs[i].y, 15*juego->sizeMult, 8*juego->sizeMult};
 
-    //Frutas
-	for (int i = 0; juego->fruits[i].x != -1; i++){
-		if (juego->fruits[i].type == 1){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 12*juego->sizeMult, 11*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit1Image, NULL, &crocRect);
+			switch (juego->crocs[i].type){
+			case 'B':
+				SDL_RenderCopy(juego->renderer, juego->crocBlue1Image, NULL, &crocRect);
+				break;
+			case 'b':
+				SDL_RenderCopy(juego->renderer, juego->crocBlue2Image, NULL, &crocRect);
+				break;
+			case 'R':
+				SDL_RenderCopy(juego->renderer, juego->crocRed1Image, NULL, &crocRect);
+				break;
+			case 'r':
+				SDL_RenderCopy(juego->renderer, juego->crocRed2Image, NULL, &crocRect);
+				break;
+			}
 		}
-		if (juego->fruits[i].type == 2){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 14*juego->sizeMult, 11*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit2Image, NULL, &crocRect);
-		}
-		if (juego->fruits[i].type == 3){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 15*juego->sizeMult, 10*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit3Image, NULL, &crocRect);
+
+		//Frutas
+		for (int i = 0; juego->fruits[i].x != -1; i++){
+			if (juego->fruits[i].type == 1){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 12*juego->sizeMult, 11*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit1Image, NULL, &crocRect);
+			}
+			if (juego->fruits[i].type == 2){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 14*juego->sizeMult, 11*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit2Image, NULL, &crocRect);
+			}
+			if (juego->fruits[i].type == 3){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 15*juego->sizeMult, 10*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit3Image, NULL, &crocRect);
+			}
 		}
 	}
 
@@ -207,6 +267,7 @@ void doRender(Juego *juego){
 //Carga y almacena la imágenes en la memoria
 void loadImages(Juego *juego){
 	//Surfaces de las imágenes. Son como "canvases" que "reservan" los pixeles que va a ocupar una imagen
+	SDL_Surface *menuSurface = NULL;
 	SDL_Surface *backSurface = NULL;
 	SDL_Surface *dkjrSurface = NULL;
 	SDL_Surface *crocBlue1Surface = NULL;
@@ -218,6 +279,7 @@ void loadImages(Juego *juego){
 	SDL_Surface *fruit3Surface = NULL;
 
 	//Carga de imágenes
+	menuSurface = IMG_Load("Resources/menu.png");
 	backSurface = IMG_Load("Resources/back.png");
 	dkjrSurface = IMG_Load("Resources/dkjr.png");
 	crocBlue1Surface = IMG_Load("Resources/crocBlue1.png");
@@ -229,6 +291,11 @@ void loadImages(Juego *juego){
 	fruit3Surface = IMG_Load("Resources/fruit3.png");
 
 	//Si falla la carga de la imagen
+	if (menuSurface == NULL){
+		printf("Cannot find menu.png\n\n");
+		SDL_Quit();
+		exit(1);
+	}
 	if (dkjrSurface == NULL){
 		printf("Cannot find dkjr.png\n\n");
 		SDL_Quit();
@@ -275,6 +342,7 @@ void loadImages(Juego *juego){
 		exit(1);
 	}
 
+	juego->menuImage = SDL_CreateTextureFromSurface(juego->renderer, menuSurface);
 	juego->dkjrImage = SDL_CreateTextureFromSurface(juego->renderer, dkjrSurface);
 	juego->backImage = SDL_CreateTextureFromSurface(juego->renderer, backSurface);
 	juego->crocBlue1Image = SDL_CreateTextureFromSurface(juego->renderer, crocBlue1Surface);
@@ -286,8 +354,9 @@ void loadImages(Juego *juego){
 	juego->fruit3Image = SDL_CreateTextureFromSurface(juego->renderer, fruit3Surface);
 
 	//Se libera la memoria que tenía la surface de la imagen, después de que se dibuja
-	SDL_FreeSurface(dkjrSurface);
+	SDL_FreeSurface(menuSurface);
 	SDL_FreeSurface(backSurface);
+	SDL_FreeSurface(dkjrSurface);
 	SDL_FreeSurface(crocBlue1Surface);
 	SDL_FreeSurface(crocBlue2Surface);
 	SDL_FreeSurface(crocRed1Surface);
@@ -300,8 +369,9 @@ void loadImages(Juego *juego){
 //Elimina las imágenes de la memoria y cierra SDL2
 void closeGame(SDL_Window *window, Juego *juego){
 //Limpia la memoria usada y cierra el programa
-	SDL_DestroyTexture(juego->dkjrImage);
+	SDL_DestroyTexture(juego->menuImage);
 	SDL_DestroyTexture(juego->backImage);
+	SDL_DestroyTexture(juego->dkjrImage);
 	SDL_DestroyTexture(juego->crocBlue1Image);
 	SDL_DestroyTexture(juego->crocBlue2Image);
 	SDL_DestroyTexture(juego->crocRed1Image);

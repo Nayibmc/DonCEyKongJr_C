@@ -67,7 +67,7 @@
                                     									
                                     <listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL2main"/>
                                     									
-                                    <listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL_image"/>
+                                    <listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="SDL2_image"/>
                                     								
                                 </option>
                                 								
