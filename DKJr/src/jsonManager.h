@@ -40,13 +40,19 @@ void observeGame(char* code);
 /**
  * Pide un update de las posiciones por graficar en el juego
  */
-void updateGame(int posx, int posy);
+void updateGame(char* code, int keyInput[]);
 
 /**************************************LOGICA**************************************/
 
 
 
 /*******************************MANEJO_DE_RESPUESTAS*******************************/
+
+
+/**
+ * Maneja el contenido del JSON con el Key: "PLAY"
+ */
+void managePlay(json_object* jObj);
 
 /**
  * Maneja el contenido del JSON con el Key: "GAME"
@@ -82,7 +88,11 @@ void manageFruitPoints(json_object* jObj);
 /**
  * Envia el JSON deseado al servidor y espera su respuesta.
  */
-int sendJSON(json_object *jObj);
+void sendJSON(json_object *jObj);
+
+void checkJSON(char* jsonRecieved);
+
+
 
 /*************************************SENDJSON*************************************/
 
