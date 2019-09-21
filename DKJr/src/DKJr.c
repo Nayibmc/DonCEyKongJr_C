@@ -2,14 +2,21 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
+#include "jsonManager.h"
+#include <json-c/json.h>
 
-//Flag para saber si el juego puede iniciar
-int gameStart = 0;
-//Agregado por JSON
+#include <stdio.h>
+#include "Socket_Cliente.h"
+#include "Socket_Cliente.c"
+#include "Socket.h"
+#include "Socket.c"
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 
-
-
+/**********************************Interfaz**********************************/
 
 typedef struct{
     int x, y;
@@ -29,7 +36,8 @@ typedef struct{
 typedef struct{
 	//Dimensiones
 	int x, y;
-	int sizeMult; //depende del tamaño de la pantalla
+	int sizeMult; 	//depende del tamaño de la pantalla
+	int state; 	//0 es el menu, 1 es el juego, 2 es el observador
 
 	DKJr dkjr;
 	Fruit fruits[20];
@@ -38,6 +46,7 @@ typedef struct{
 	SDL_Renderer *renderer;
 
 	//Imágenes
+	SDL_Texture *menuImage;
 	SDL_Texture *backImage;
 	SDL_Texture *dkjrImage;
 	SDL_Texture *crocBlue1Image;
@@ -48,6 +57,9 @@ typedef struct{
 	SDL_Texture *fruit2Image;
 	SDL_Texture *fruit3Image;
 } Juego;
+
+int mouseInPlay();
+int mouseInObserver();
 
 //Eventos (se cierra una ventana, se recibe input, etc.)
 int processEvents(SDL_Window *window, Juego *juego){
@@ -64,6 +76,7 @@ int processEvents(SDL_Window *window, Juego *juego){
         }
       }
       break;
+
       case SDL_KEYDOWN:{
         switch(event.key.keysym.sym){
           case SDLK_ESCAPE:
@@ -72,35 +85,87 @@ int processEvents(SDL_Window *window, Juego *juego){
         }
       }
       break;
+
       case SDL_QUIT:
         //quit out of the game
         done = 1;
       break;
     }
+
+    //Cuando se está en el menú y se presiona click izquierdo
+    if (juego->state == 0 && event.type == SDL_MOUSEBUTTONDOWN){
+    	if (event.button.button == SDL_BUTTON_LEFT){
+			int mouseX, mouseY;
+			SDL_GetMouseState(&mouseX, &mouseY);
+
+			if (mouseInPlay(juego, mouseX, mouseY)){
+			  juego->state = 1;
+			}
+    	}
+    }
   }
 
-  //Teclas direccionales
   const Uint8 *state = SDL_GetKeyboardState(NULL);
-  if(state[SDL_SCANCODE_LEFT]){
-    juego->dkjr.x -= 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_RIGHT]){
-    juego->dkjr.x += 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_UP]){
-    juego->dkjr.y -= 1*juego->sizeMult;
-  }
-  if(state[SDL_SCANCODE_DOWN]){
-    juego->dkjr.y += 1*juego->sizeMult;
+
+  if (juego->state == 1){
+	  //Teclas direccionales
+	  if(state[SDL_SCANCODE_LEFT]){
+		  juego->dkjr.x -= 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_RIGHT]){
+		  juego->dkjr.x += 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_UP]){
+		  juego->dkjr.y -= 1*juego->sizeMult;
+	  }
+	  if(state[SDL_SCANCODE_DOWN]){
+		  juego->dkjr.y += 1*juego->sizeMult;
+	  }
   }
 
   return done;
+}
+
+int mouseInPlay(Juego *juego, int mouseX, int mouseY){
+	int playXLeft = 12*8*juego->sizeMult;
+	int playXRight = 19*8*juego->sizeMult;
+	int playYDown = juego->y-(6*8*juego->sizeMult);
+	int playYUp = juego->y-(10*8*juego->sizeMult);
+
+	if ((mouseX > playXLeft && mouseX < playXRight) == 0){
+		return 0;
+	}
+	if ((mouseY > playYUp && mouseY < playYDown) == 0){
+		return 0;
+	}
+	//Envia JSON de inicio
+	//startGame();
+	return 1;
+}
+
+int mouseInObserver(Juego *juego, int mouseX, int mouseY){
+	int obsXLeft = 10*8*juego->sizeMult;
+	int obsXRight = 21*8*juego->sizeMult;
+	int obsYDown = juego->y-(2*8*juego->sizeMult);
+	int obsYUp = juego->y-(5*8*juego->sizeMult);
+
+	if ((mouseX > obsXLeft && mouseX < obsXRight) == 0){
+		return 0;
+	}
+	if ((mouseY > obsYUp && mouseY < obsYDown) == 0){
+		return 0;
+	}
+	//Envia JSON para observar
+	//Necesita el codigo
+	//observeGame("AXY87MJ6P9R8");
+	return 1;
 }
 
 //Inicializa variables y funciones necesarias
 void initializeGame(SDL_Window *window, Juego *juego){
 	SDL_Init(SDL_INIT_VIDEO);   								//Se inicializa SDL2
 
+	juego->state = 0;
 	juego->sizeMult = 3;
 	juego->x = 248*juego->sizeMult;
 	juego->y = 216*juego->sizeMult;
@@ -165,47 +230,55 @@ void initializeGame(SDL_Window *window, Juego *juego){
 
 //Dibuja
 void doRender(Juego *juego){
-	//El fondo
-	SDL_Rect backRect = {0, 0, juego->x, juego->y};
-	SDL_RenderCopy(juego->renderer, juego->backImage, NULL, &backRect);
+	//
+	if (juego->state == 0){
+		SDL_Rect menuRect = {0, 0, juego->x, juego->y};
+		SDL_RenderCopy(juego->renderer, juego->menuImage, NULL, &menuRect);
+	}
 
-    //DKJr
-    SDL_Rect dkjrRect = {juego->dkjr.x, juego->dkjr.y, 25*juego->sizeMult, 16*juego->sizeMult};
-    SDL_RenderCopy(juego->renderer, juego->dkjrImage, NULL, &dkjrRect);
+	if (juego->state == 1){
+		//El fondo
+		SDL_Rect backRect = {0, 0, juego->x, juego->y};
+		SDL_RenderCopy(juego->renderer, juego->backImage, NULL, &backRect);
 
-    //Cocodrilos
-    for (int i = 0; juego->crocs[i].x != -1; i++){
-        SDL_Rect crocRect = {juego->crocs[i].x, juego->crocs[i].y, 15*juego->sizeMult, 8*juego->sizeMult};
+		//DKJr
+		SDL_Rect dkjrRect = {juego->dkjr.x, juego->dkjr.y, 25*juego->sizeMult, 16*juego->sizeMult};
+		SDL_RenderCopy(juego->renderer, juego->dkjrImage, NULL, &dkjrRect);
 
-    	switch (juego->crocs[i].type){
-    	case 'B':
-    		SDL_RenderCopy(juego->renderer, juego->crocBlue1Image, NULL, &crocRect);
-    		break;
-    	case 'b':
-			SDL_RenderCopy(juego->renderer, juego->crocBlue2Image, NULL, &crocRect);
-			break;
-		case 'R':
-			SDL_RenderCopy(juego->renderer, juego->crocRed1Image, NULL, &crocRect);
-			break;
-		case 'r':
-			SDL_RenderCopy(juego->renderer, juego->crocRed2Image, NULL, &crocRect);
-			break;
-    	}
-    }
+		//Cocodrilos
+		for (int i = 0; juego->crocs[i].x != -1; i++){
+			SDL_Rect crocRect = {juego->crocs[i].x, juego->crocs[i].y, 15*juego->sizeMult, 8*juego->sizeMult};
 
-    //Frutas
-	for (int i = 0; juego->fruits[i].x != -1; i++){
-		if (juego->fruits[i].type == 1){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 12*juego->sizeMult, 11*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit1Image, NULL, &crocRect);
+			switch (juego->crocs[i].type){
+			case 'B':
+				SDL_RenderCopy(juego->renderer, juego->crocBlue1Image, NULL, &crocRect);
+				break;
+			case 'b':
+				SDL_RenderCopy(juego->renderer, juego->crocBlue2Image, NULL, &crocRect);
+				break;
+			case 'R':
+				SDL_RenderCopy(juego->renderer, juego->crocRed1Image, NULL, &crocRect);
+				break;
+			case 'r':
+				SDL_RenderCopy(juego->renderer, juego->crocRed2Image, NULL, &crocRect);
+				break;
+			}
 		}
-		if (juego->fruits[i].type == 2){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 14*juego->sizeMult, 11*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit2Image, NULL, &crocRect);
-		}
-		if (juego->fruits[i].type == 3){
-			SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 15*juego->sizeMult, 10*juego->sizeMult};
-			SDL_RenderCopy(juego->renderer, juego->fruit3Image, NULL, &crocRect);
+
+		//Frutas
+		for (int i = 0; juego->fruits[i].x != -1; i++){
+			if (juego->fruits[i].type == 1){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 12*juego->sizeMult, 11*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit1Image, NULL, &crocRect);
+			}
+			if (juego->fruits[i].type == 2){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 14*juego->sizeMult, 11*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit2Image, NULL, &crocRect);
+			}
+			if (juego->fruits[i].type == 3){
+				SDL_Rect crocRect = {juego->fruits[i].x, juego->fruits[i].y, 15*juego->sizeMult, 10*juego->sizeMult};
+				SDL_RenderCopy(juego->renderer, juego->fruit3Image, NULL, &crocRect);
+			}
 		}
 	}
 
@@ -216,6 +289,7 @@ void doRender(Juego *juego){
 //Carga y almacena la imágenes en la memoria
 void loadImages(Juego *juego){
 	//Surfaces de las imágenes. Son como "canvases" que "reservan" los pixeles que va a ocupar una imagen
+	SDL_Surface *menuSurface = NULL;
 	SDL_Surface *backSurface = NULL;
 	SDL_Surface *dkjrSurface = NULL;
 	SDL_Surface *crocBlue1Surface = NULL;
@@ -227,6 +301,7 @@ void loadImages(Juego *juego){
 	SDL_Surface *fruit3Surface = NULL;
 
 	//Carga de imágenes
+	menuSurface = IMG_Load("Resources/menu.png");
 	backSurface = IMG_Load("Resources/back.png");
 	dkjrSurface = IMG_Load("Resources/dkjr.png");
 	crocBlue1Surface = IMG_Load("Resources/crocBlue1.png");
@@ -238,6 +313,11 @@ void loadImages(Juego *juego){
 	fruit3Surface = IMG_Load("Resources/fruit3.png");
 
 	//Si falla la carga de la imagen
+	if (menuSurface == NULL){
+		printf("Cannot find menu.png\n\n");
+		SDL_Quit();
+		exit(1);
+	}
 	if (dkjrSurface == NULL){
 		printf("Cannot find dkjr.png\n\n");
 		SDL_Quit();
@@ -284,6 +364,7 @@ void loadImages(Juego *juego){
 		exit(1);
 	}
 
+	juego->menuImage = SDL_CreateTextureFromSurface(juego->renderer, menuSurface);
 	juego->dkjrImage = SDL_CreateTextureFromSurface(juego->renderer, dkjrSurface);
 	juego->backImage = SDL_CreateTextureFromSurface(juego->renderer, backSurface);
 	juego->crocBlue1Image = SDL_CreateTextureFromSurface(juego->renderer, crocBlue1Surface);
@@ -295,8 +376,9 @@ void loadImages(Juego *juego){
 	juego->fruit3Image = SDL_CreateTextureFromSurface(juego->renderer, fruit3Surface);
 
 	//Se libera la memoria que tenía la surface de la imagen, después de que se dibuja
-	SDL_FreeSurface(dkjrSurface);
+	SDL_FreeSurface(menuSurface);
 	SDL_FreeSurface(backSurface);
+	SDL_FreeSurface(dkjrSurface);
 	SDL_FreeSurface(crocBlue1Surface);
 	SDL_FreeSurface(crocBlue2Surface);
 	SDL_FreeSurface(crocRed1Surface);
@@ -309,8 +391,9 @@ void loadImages(Juego *juego){
 //Elimina las imágenes de la memoria y cierra SDL2
 void closeGame(SDL_Window *window, Juego *juego){
 //Limpia la memoria usada y cierra el programa
-	SDL_DestroyTexture(juego->dkjrImage);
+	SDL_DestroyTexture(juego->menuImage);
 	SDL_DestroyTexture(juego->backImage);
+	SDL_DestroyTexture(juego->dkjrImage);
 	SDL_DestroyTexture(juego->crocBlue1Image);
 	SDL_DestroyTexture(juego->crocBlue2Image);
 	SDL_DestroyTexture(juego->crocRed1Image);
@@ -327,16 +410,180 @@ void closeGame(SDL_Window *window, Juego *juego){
 	SDL_Quit();
 }
 
+/**********************************Interfaz**********************************/
 
-#include <stdio.h>
-#include "Socket_Cliente.h"
-#include "Socket_Cliente.c"
-#include "Socket.h"
-#include "Socket.c"
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
+
+
+
+
+
+
+
+
+
+
+/*******************************JSONManagement*******************************/
+
+
+//Flag para saber si el juego puede iniciar
+int gameStart = 0;
+
+
+
+
+
+
+/**************************************LOGICA**************************************/
+
+
+/**
+ * Al presionar el botón de Iniciar:
+ * Envia un request al servidor para ver si inicia el juego.
+ */
+void startGame(){
+
+	printf("\nSe desea iniciar un Game.\n\n");
+
+	///Se crea un objeto JSON
+	json_object *jObj = json_object_new_object();
+
+	///Variables para agregar como Key y Data
+	char* jsonKEY = "PLAY";
+	char* jsonData = "Let me play!"; //Este dato no es necesario en el Servidor
+
+	///Se agrega la informacion en el JSON
+	//Se crea un jString con el dato por ingresar en JSON
+	json_object *jString = json_object_new_string(jsonData);
+	//Se ingresa el jString al JSON con su propio key ("jsonKEY")
+	json_object_object_add(jObj,jsonKEY, jString);
+
+	///Se envia el JSON a través de la función sendJSON
+	//Retona el resultado del JSON entrante del servidor
+	char* permition = sendJSON(jObj);
+
+	char* stay = "-1";
+
+	if (*permition == *stay) {
+		printf("Too many games in Server.");
+	} else {
+		printf("Start Game!\nCode: %s",permition);
+	}
+
+}
+
+/**
+ * Al presionar el botón de Observar:
+ * Envia un request al servidor con el código de la partida
+ * que se desea iniciar a observar.
+ * @param code: codigo del juego al que se desea unir
+ */
+void observeGame(char* code){
+
+	printf("\n\Se desea observar un Game.\n\n");
+
+	///Se crea un objeto JSON
+	json_object *jObj = json_object_new_object();
+
+	///Variables para agregar como Key y Data
+	char* jsonKEY = "OBSERVE";
+	char* jsonData = code; //Este dato es el codigo del juego al que se desea unir
+
+	///Se agrega la informacion en el JSON
+	//Se crea un jString con el dato por ingresar en JSON
+	json_object *jString = json_object_new_string(jsonData);
+	//Se ingresa el jString al JSON con su propio key ("jsonKEY")
+	json_object_object_add(jObj,jsonKEY, jString);
+
+	///Se envia el JSON a través de la función sendJSON
+	//Retona el resultado del JSON entrante del servidor
+	char* permition = sendJSON(jObj);
+
+	char* observe = "1";
+	char* stay = "0";
+	char* wrong = "-1";
+
+	if (*permition == *observe) {
+		printf("Start Observing Game.");
+	} else if (*permition == *stay) {
+		printf("Too many observers for this game in Server.");
+	} else if (*permition == *wrong) {
+		printf("The game with code \"%s\" doesn't exist.",code);
+	} else {
+		printf("Error in observeGame(): %s",permition);
+	}
+
+}
+
+
+/**
+ * Recibe las posiciones actuales de DKJr y las envia al servidor
+ * para obtener las colisiones y que este devuelva todo por graficar
+ * de vuelta en el cliente.
+ */
+void updateGame(char* code, int keyInput[]) {
+
+	///Se crea un objeto JSON
+	struct json_object *jObj = json_object_new_object();
+
+	//Se guardan por separado los inputs y se convierten a un char
+	char* up;
+	up =(char*)calloc(255, sizeof(char));
+	char* right;
+	right = (char*)calloc(255, sizeof(char));
+	char* down;
+	down = (char*)calloc(255, sizeof(char));
+	char* left;
+	left = (char*)calloc(255, sizeof(char));
+
+	sprintf(up, "%d", keyInput[0]);
+	sprintf(right, "%d", keyInput[1]);
+	sprintf(down, "%d", keyInput[2]);
+	sprintf(left, "%d", keyInput[3]);
+
+	//Se crea un JSONArray que contendra los inputs
+	struct json_object* inputArray = json_object_new_array();
+
+	//Inputs convertidos en JStrings y dentro de un JSON Array
+	json_object* jStringUp = json_object_new_string(up);
+	json_object_array_add(inputArray, jStringUp);
+	json_object* jStringRight = json_object_new_string(right);
+	json_object_array_add(inputArray, jStringRight);
+	json_object* jStringDown = json_object_new_string(down);
+	json_object_array_add(inputArray, jStringDown);
+	json_object* jStringLeft = json_object_new_string(left);
+	json_object_array_add(inputArray, jStringLeft);
+
+	//Key para el JSONArray
+	char* jsonKeyInput = "INPUT";
+
+	//Se agrega el JSONArray al JSON por enviar
+	json_object_object_add(jObj,jsonKeyInput, inputArray);
+
+	///Variables para agregar como Key y Data
+	char* jsonKeyCode = "CODE";
+	char* jsonDataCode = code;  //Codigo del juego que se modificara
+
+	///Se agrega la informacion del codigo en el JSON
+	json_object *jstringCode = json_object_new_string(jsonDataCode);
+	json_object_object_add(jObj,jsonKeyCode, jstringCode);
+
+	///Se envia el JSON a través de la función sendJSON
+	sendJSON(jObj);
+
+}
+
+
+/**************************************LOGICA**************************************/
+
+
+
+
+
+
+
+//Agregado por JSON
+
+
 
 int size(char *ptr)
 {
@@ -437,55 +684,55 @@ static void runClient() {
 }
 
 
-#include "jsonManager.h"
-#include <json-c/json.h>
+
 
 
 int main(int argc, char *argv[]){
 
 	//PRUEBAS JSON MANAGEMENT
-	/*char* gameState = */
 
-	startGame();
+	//Para iniciar el juego
+	//startGame();
+
+
+	//Para observar un juego
+	observeGame("000A");
+	/*
+	//Para actualizar el juego
+	//keyInput son las teclas
+	int keyInput[4] = {0,1,0,1};
+	updateGame("AXY87MJ6P9R8", keyInput);
+	*/
+
 	//runClient();
 
-	//printf("GAMESTATE: %s",gameState);
-
-
-	observeGame("AXY87MJ6P9R8");
-
-
-	int keyInput[4] = {0,1,0,1};
-
-
-
-	updateGame("AXY87MJ6P9R8", keyInput);
-
-
-
-
+/*
 
 
 	//INTERFAZ
-	/*
 	Juego juego;
-	SDL_Window *window = NULL;
-	initializeGame(window, &juego);
-	loadImages(&juego);
-    // The window is open: enter program loop (see SDL_PollEvent)
-    int done = 0;
-    //Event loop
-    while(!done){
-		//Check for events
-		done = processEvents(window, &juego);
-		//Render display
-		doRender(&juego);
-		//don't burn up the CPU
-		SDL_Delay(10);
-    }
-    closeGame(window, &juego);
-	*/
+		SDL_Window *window = NULL;
 
+		initializeGame(window, &juego);
+		loadImages(&juego);
+
+	    // The window is open: enter program loop (see SDL_PollEvent)
+	    int done = 0;
+	    //Event loop
+	    while(!done){
+			//Check for events
+			done = processEvents(window, &juego);
+
+			//Render display
+			doRender(&juego);
+
+			//don't burn up the CPU
+			SDL_Delay(10);
+	    }
+
+	    closeGame(window, &juego);
+	    return 0;
+*/
 
     return 0;
 

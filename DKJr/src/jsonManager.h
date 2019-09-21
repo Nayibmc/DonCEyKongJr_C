@@ -26,22 +26,6 @@
 
 
 /**************************************LOGICA**************************************/
-
-/**
- * Iniciar juego
- */
-void startGame();
-
-/**
- * Observar juego
- */
-void observeGame(char* code);
-
-/**
- * Pide un update de las posiciones por graficar en el juego
- */
-void updateGame(char* code, int keyInput[]);
-
 /**************************************LOGICA**************************************/
 
 
@@ -88,9 +72,9 @@ void manageFruitPoints(json_object* jObj);
 /**
  * Envia el JSON deseado al servidor y espera su respuesta.
  */
-void sendJSON(json_object *jObj);
+char* sendJSON(json_object *jObj);
 
-void checkJSON(char* jsonRecieved);
+char* checkJSON(char* jsonRecieved);
 
 
 
