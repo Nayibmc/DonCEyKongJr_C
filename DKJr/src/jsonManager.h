@@ -24,61 +24,16 @@
  */
 
 
-
-/**************************************LOGICA**************************************/
-/**************************************LOGICA**************************************/
-
-
-
-/*******************************MANEJO_DE_RESPUESTAS*******************************/
-
-
-/**
- * Maneja el contenido del JSON con el Key: "PLAY"
- */
-void managePlay(json_object* jObj);
-
-/**
- * Maneja el contenido del JSON con el Key: "GAME"
- */
-void manageGame(json_object* jObj);
-
-/**
- * Maneja el contenido del JSON con el Key: "DKJR"
- */
-void manageDKJr(json_object* jObj);
-
-/**
- * Maneja el contenido del JSON con el Key: "CROCODILES"
- */
-void manageCrocodiles(json_object* jObj);
-
-/**
- * Maneja el contenido del JSON con el Key: "FRUITS"
- */
-void manageFruits(json_object* jObj);
-
-/**
- * Maneja el contenido del JSON con el Key: "FRUITPOINTS"
- */
-void manageFruitPoints(json_object* jObj);
-
-/*******************************MANEJO_DE_RESPUESTAS*******************************/
-
-
-
-/*************************************SENDJSON*************************************/
-
 /**
  * Envia el JSON deseado al servidor y espera su respuesta.
  */
 char* sendJSON(json_object *jObj);
 
+/**
+ * Verifica el JSON entrante del Servidor.
+ */
 char* checkJSON(char* jsonRecieved);
 
-
-
-/*************************************SENDJSON*************************************/
 
 
 #endif /* JSONMANAGER_H_ */

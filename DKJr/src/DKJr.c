@@ -16,6 +16,24 @@
 #include <arpa/inet.h>
 
 
+
+
+///Agregado por JSONManager
+
+/**
+ * KeyInput array de teclas presionadas o no
+ */
+int keyInput[4];   // = {0,1,0,1};
+
+
+
+
+
+
+
+
+
+
 /**********************************Interfaz**********************************/
 
 typedef struct{
@@ -109,18 +127,45 @@ int processEvents(SDL_Window *window, Juego *juego){
 
   if (juego->state == 1){
 	  //Teclas direccionales
+
+	  if(state[SDL_SCANCODE_UP]){
+	  		  juego->dkjr.y -= 1*juego->sizeMult;
+	  		keyInput[0] = 1;
+	  } else {
+		  keyInput[0] = 0;
+	  }
+
+	  if(state[SDL_SCANCODE_RIGHT]){
+	  		  juego->dkjr.x += 1*juego->sizeMult;
+	  		keyInput[1] = 1;
+	  } else {
+		  keyInput[1] = 0;
+	  }
+
+	  if(state[SDL_SCANCODE_DOWN]){
+	  		  juego->dkjr.y += 1*juego->sizeMult;
+	  		keyInput[2] = 1;
+	  } else {
+		  keyInput[2] = 0;
+	  }
+
 	  if(state[SDL_SCANCODE_LEFT]){
 		  juego->dkjr.x -= 1*juego->sizeMult;
+		  keyInput[3] = 1;
+	  } else {
+		  keyInput[3] = 0;
 	  }
-	  if(state[SDL_SCANCODE_RIGHT]){
-		  juego->dkjr.x += 1*juego->sizeMult;
-	  }
-	  if(state[SDL_SCANCODE_UP]){
-		  juego->dkjr.y -= 1*juego->sizeMult;
-	  }
-	  if(state[SDL_SCANCODE_DOWN]){
-		  juego->dkjr.y += 1*juego->sizeMult;
-	  }
+
+
+
+
+
+
+
+
+
+
+
   }
 
   return done;
@@ -390,7 +435,7 @@ void loadImages(Juego *juego){
 
 //Elimina las imágenes de la memoria y cierra SDL2
 void closeGame(SDL_Window *window, Juego *juego){
-//Limpia la memoria usada y cierra el programa
+	//Limpia la memoria usada y cierra el programa
 	SDL_DestroyTexture(juego->menuImage);
 	SDL_DestroyTexture(juego->backImage);
 	SDL_DestroyTexture(juego->dkjrImage);
@@ -422,18 +467,117 @@ void closeGame(SDL_Window *window, Juego *juego){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***************************InterfazPorImplementar***************************/
+
+/**
+ * Grafica la información del Juego.
+ */
+void showGameInfo(char* state, char* score, char* level, char* lives) {
+
+	printf("-> Showing Game Info\n");
+	printf("   - State: %s\n   - Score: %s\n   - Level: %s\n   - Lives: %s\n",state,score,level,lives);
+
+}
+
+/**
+ * Grafica a DKJr.
+ */
+void showDKJr(char* state, int posX, int posY) {
+
+	printf("-> Showing DKJr\n");
+	printf("   - State: %s\n   - PosX: %d\n   - PosY: %d\n",state,posX,posY);
+
+}
+
+/**
+ * Grafica un Cocodrilo.
+ */
+void showCrocodile(char* color, int posX, int posY) {
+
+	printf("\nShowing Crocodile\n");
+	printf("   - Color: %s\n   - PosX: %d\n   - PosY: %d\n",color,posX,posY);
+
+}
+
+/**
+ * Grafica una Fruta.
+ */
+void showFruit(char* type, int posX, int posY) {
+
+	printf("\nShowing Fruit\n");
+	printf("   - Type: %s\n   - PosX: %d\n   - PosY: %d\n",type,posX,posY);
+
+}
+
+/**
+ * Grafica un Puntaje proveniente de una Fruta.
+ */
+void showFruitPoints(char* points, int posX, int posY) {
+
+	printf("\nShowing FruitPoints\n");
+	printf("   - Points: %s\n   - PosX: %d\n   - PosY: %d\n",points,posX,posY);
+
+
+}
+
+/***************************InterfazPorImplementar***************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*******************************JSONManagement*******************************/
 
-
 //Flag para saber si el juego puede iniciar
-int gameStart = 0;
+//int gameStart = 0;
 
-
-
-
-
+/**
+ * Flag para indicar si es jugador o observador
+ * -1: No iniciado
+ *  1: Jugador
+ *  0: Observador
+ */
+int userType = -1;
 
 /**************************************LOGICA**************************************/
+
 
 
 /**
@@ -465,8 +609,16 @@ void startGame(){
 
 	if (*permition == *stay) {
 		printf("Too many games in Server.");
+		/**
+		 * MESSAGEBOX
+		 */
 	} else {
 		printf("Start Game!\nCode: %s",permition);
+		//Cambia el tipo de usuario a Jugador
+		userType = 1;
+		/**
+		 * FUNCION PARA INICIAR JUEGO
+		 */
 	}
 
 }
@@ -479,7 +631,7 @@ void startGame(){
  */
 void observeGame(char* code){
 
-	printf("\n\Se desea observar un Game.\n\n");
+	printf("\nSe desea observar un Game.\n\n");
 
 	///Se crea un objeto JSON
 	json_object *jObj = json_object_new_object();
@@ -504,10 +656,21 @@ void observeGame(char* code){
 
 	if (*permition == *observe) {
 		printf("Start Observing Game.");
+		//Cambia el tipo de usuario a
+		userType = 0;
+		/**
+		 * FUNCION PARA OBSERVAR JUEGO
+		 */
 	} else if (*permition == *stay) {
 		printf("Too many observers for this game in Server.");
+		/**
+		 * MESSAGEBOX
+		 */
 	} else if (*permition == *wrong) {
 		printf("The game with code \"%s\" doesn't exist.",code);
+		/**
+		* MESSAGEBOX
+		*/
 	} else {
 		printf("Error in observeGame(): %s",permition);
 	}
@@ -519,6 +682,8 @@ void observeGame(char* code){
  * Recibe las posiciones actuales de DKJr y las envia al servidor
  * para obtener las colisiones y que este devuelva todo por graficar
  * de vuelta en el cliente.
+ * @param code: codigo del juego al que se desea unir
+ * @param keyInput: Array con las 4 diferentes teclas presionadas o no
  */
 void updateGame(char* code, int keyInput[]) {
 
@@ -527,7 +692,7 @@ void updateGame(char* code, int keyInput[]) {
 
 	//Se guardan por separado los inputs y se convierten a un char
 	char* up;
-	up =(char*)calloc(255, sizeof(char));
+	up = (char*)calloc(255, sizeof(char));
 	char* right;
 	right = (char*)calloc(255, sizeof(char));
 	char* down;
@@ -554,7 +719,7 @@ void updateGame(char* code, int keyInput[]) {
 	json_object_array_add(inputArray, jStringLeft);
 
 	//Key para el JSONArray
-	char* jsonKeyInput = "INPUT";
+	char* jsonKeyInput = "UPDATE";
 
 	//Se agrega el JSONArray al JSON por enviar
 	json_object_object_add(jObj,jsonKeyInput, inputArray);
@@ -568,7 +733,337 @@ void updateGame(char* code, int keyInput[]) {
 	json_object_object_add(jObj,jsonKeyCode, jstringCode);
 
 	///Se envia el JSON a través de la función sendJSON
-	sendJSON(jObj);
+	char* updateArray = sendJSON(jObj);
+
+	///PARSEADO DE ARRAY PROVENIENTE DEL SERVIDOR///
+
+	updateGameAux(updateArray);
+
+}
+
+
+void updateGameAux(char* updateArray) {
+
+	printf("UpdateArray: %s\n\n", updateArray);
+
+	//Toma el String proveniente del Servidor
+	//Y es convertido a un JSON
+	json_object* parsedJson = json_tokener_parse(updateArray);
+
+	/**
+	 * "GAME"
+	 *  Array que contiene el estado del juego, el puntaje actual,
+	 *  el nivel actual y la cantidad de vidas restantes.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayGame;
+	dataFromJSONArrayGame = json_object_object_get(parsedJson, "GAME");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayGameString = json_object_get_string(dataFromJSONArrayGame);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayGameString != NULL) {
+		printf("\nGameArray: %s\n", dataFromJSONArrayGameString);
+		/**
+		 * FUNCION DONDE ENVIAR A GRAFICAR
+		 */
+		manageGame(dataFromJSONArrayGame);
+
+	}
+
+	/**
+	 * "DKJR"
+	 *  Array que contiene el estado de DKJr (sprite por usar),
+	 *  la posición actual en x y la posición actual en y.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayDKJr;
+	dataFromJSONArrayDKJr = json_object_object_get(parsedJson, "DKJR");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayDKJrString = json_object_get_string(dataFromJSONArrayDKJr);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayDKJrString != NULL) {
+		printf("\nDKJrArray: %s\n", dataFromJSONArrayDKJrString);
+		/**
+		 * FUNCION DONDE ENVIAR A GRAFICAR
+		 */
+		manageDKJr(dataFromJSONArrayDKJr);
+	}
+
+	/**
+	 * "CROCODILES"
+	 *  Array de array que contienen el color del cocodrilo,
+	 *  su posición actual en x y su posición actual en y.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayCrocodiles;
+	dataFromJSONArrayCrocodiles = json_object_object_get(parsedJson, "CROCODILES");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayCrocodilesString = json_object_get_string(dataFromJSONArrayCrocodiles);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayCrocodilesString != NULL) {
+
+		printf("\nCrocodilesArray: %s\n", dataFromJSONArrayCrocodilesString);
+		/**
+		 * FUNCION DONDE ENVIAR A GRAFICAR
+		 */
+		manageCrocodiles(dataFromJSONArrayCrocodiles);
+	}
+
+	/**
+	 * "FRUITS"
+	 *  Array de arrays que contienen el tipo de fruta (sprite por usar),
+	 *  su posición actual en x y su posición actual en y.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayFruits;
+	dataFromJSONArrayFruits = json_object_object_get(parsedJson, "FRUITS");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayFruitsString = json_object_get_string(dataFromJSONArrayFruits);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayFruitsString != NULL) {
+
+		printf("\nFruitArray: %s\n", dataFromJSONArrayFruitsString);
+		/**
+		 * FUNCION DONDE ENVIAR A GRAFICAR
+		 */
+		manageFruits(dataFromJSONArrayFruits);
+	}
+
+	/**
+	 * "FRUITPOINTS"
+	 *  Array de arrays que contienen el puntaje por graficar,
+	 *  su posición actual en x y su posición actual en y.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayFruitPoints;
+	dataFromJSONArrayFruitPoints = json_object_object_get(parsedJson, "FRUITPOINTS");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayFruitPointsString = json_object_get_string(dataFromJSONArrayFruitPoints);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayFruitPointsString != NULL) {
+
+		printf("\nFruitPointsArray: %s\n", dataFromJSONArrayFruitPointsString);
+		/**
+		 * FUNCION DONDE ENVIAR A GRAFICAR
+		 */
+		manageFruitPoints(dataFromJSONArrayFruitPoints);
+	}
+
+	/**
+	 * "ERROR"
+	 *  Error en JSON.
+	 */
+
+	//json_object para tomar lo que viene junto al Key
+	struct json_object* dataFromJSONArrayError;
+	dataFromJSONArrayError = json_object_object_get(parsedJson, "ERROR");
+	//Obtiene el dato en String
+	char* dataFromJSONArrayErrorString = json_object_get_string(dataFromJSONArrayError);
+	//Verifica si este existe para retornar su contenido
+	if (dataFromJSONArrayErrorString != NULL) {
+
+		printf("\nErrorArray: %s\n", dataFromJSONArrayErrorString);
+	}
+
+}
+
+
+/**
+ * Maneja el contenido del JSON con el Key: "GAME"
+ */
+void manageGame(json_object* jObj){
+
+	//Informacion que viene en jObj
+	const char* state;
+	const char* score;
+	const char* level;
+	const char* lives;
+
+	//Toma el estado del juego
+	json_object* first = json_object_array_get_idx(jObj,0);
+	state = json_object_get_string(first);
+
+	//Toma el puntaje del juego
+	json_object* second = json_object_array_get_idx(jObj,1);
+	score = json_object_get_string(second);
+
+	//Toma el nivel en el que se encuentra el juego
+	json_object* third = json_object_array_get_idx(jObj,2);
+	level = json_object_get_string(third);
+
+	//Toma la cantidad de vidas que le quedan al jugador
+	json_object* fourth = json_object_array_get_idx(jObj,3);
+	lives = json_object_get_string(fourth);
+
+	//Grafica la informacion del Juego
+	showGameInfo(state, score, level, lives);
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "DKJR"
+ */
+void manageDKJr(json_object* jObj){
+
+	//Informacion que viene en jObj
+	 const char* state;
+	 int posX;
+	 int posY;
+
+	 //Toma el estado de DKJr
+	json_object* first;
+	first = json_object_array_get_idx(jObj,0);
+	state = json_object_get_string(first);
+
+	//Toma la posicion en x de DKJr
+	json_object* second;
+	second = json_object_array_get_idx(jObj,1);
+	posX = json_object_get_int(second);
+
+	//Toma la posicion en y de DKJr
+	json_object* third;
+	third = json_object_array_get_idx(jObj,2);
+	posY = json_object_get_int(third);
+
+	//Grafica a DKJr
+	showDKJr(state, posX, posY);
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "CROCODILES"
+ */
+void manageCrocodiles(json_object* jObj){
+
+	//Informacion que viene en cada array de jObj
+	const char* color;
+	int posX;
+	int posY;
+
+	//json_object's temporales para iterar
+	json_object* tempCrocodile;
+	json_object* first;
+	json_object* second;
+	json_object* third;
+
+	//Largo del array de Cocodrilos
+	int arrayLength = json_object_array_length(jObj);
+
+	//Se itera el array para obtener cada Cocodrilo
+	for(int i = 0; i < arrayLength; i++) {
+
+		//Toma el cocodrilo en la posicion i del Array
+		tempCrocodile = json_object_array_get_idx(jObj,i);
+
+		//Toma el color del Cocodrilo
+		first = json_object_array_get_idx(tempCrocodile,0);
+		color = json_object_get_string(first);
+
+		//Toma la posicion en x del Cocodrilo
+		second = json_object_array_get_idx(tempCrocodile,1);
+		posX = json_object_get_int(second);
+
+		//Toma la posicion en y del Cocodrilo
+		third = json_object_array_get_idx(tempCrocodile,2);
+		posY = json_object_get_int(third);
+
+		//Grafica al Cocodrilo
+		showCrocodile(color, posX, posY);
+
+	}
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "FRUITS"
+ */
+void manageFruits(json_object* jObj){
+
+	//Informacion que viene en cada array de jObj
+	const char* type;
+	int posX;
+	int posY;
+
+	//json_object's temporales para iterar
+	json_object* tempFruit;
+	json_object* first;
+	json_object* second;
+	json_object* third;
+
+	//Largo del array de Frutas
+	int arrayLength = json_object_array_length(jObj);
+
+	//Se itera el array para obtener cada Fruta
+	for(int i = 0; i < arrayLength; i++) {
+
+		//Toma la fruta en la posicion i del Array
+		tempFruit = json_object_array_get_idx(jObj,i);
+
+		//Toma el tipo de Fruta
+		first = json_object_array_get_idx(tempFruit,0);
+		type = json_object_get_string(first);
+
+		//Toma la posicion en x de la Fruta
+		second = json_object_array_get_idx(tempFruit,1);
+		posX = json_object_get_int(second);
+
+		//Toma la posicion en y de la Fruta
+		third = json_object_array_get_idx(tempFruit,2);
+		posY = json_object_get_int(third);
+
+		//Grafica la Fruta
+		showFruit(type, posX, posY);
+
+	}
+
+}
+
+/**
+ * Maneja el contenido del JSON con el Key: "FRUITPOINTS"
+ */
+void manageFruitPoints(json_object* jObj){
+
+	//Informacion que viene en cada array de jObj
+	const char* points;
+	int posX;
+	int posY;
+
+	//json_object's temporales para iterar
+	json_object* tempFruitPoints;
+	json_object* first;
+	json_object* second;
+	json_object* third;
+
+	//Largo del array del Puntaje de las Frutas
+	int arrayLength = json_object_array_length(jObj);
+
+	//Se itera el array para obtener cada Puntaje de las Frutas
+	for(int i = 0; i < arrayLength; i++) {
+
+		//Toma la fruta en la posicion i del Array
+		tempFruitPoints = json_object_array_get_idx(jObj,i);
+
+		//Toma el puntaje de la Fruta
+		first = json_object_array_get_idx(tempFruitPoints,0);
+		points = json_object_get_string(first);
+
+		//Toma la posicion en x del Puntaje de la Fruta
+		second = json_object_array_get_idx(tempFruitPoints,1);
+		posX = json_object_get_int(second);
+
+		//Toma la posicion en y del Puntaje de la Fruta
+		third = json_object_array_get_idx(tempFruitPoints,2);
+		posY = json_object_get_int(third);
+
+		//Grafica el del Puntaje de la Fruta
+		showFruitPoints(points, posX, posY);
+
+	}
 
 }
 
@@ -581,10 +1076,12 @@ void updateGame(char* code, int keyInput[]) {
 
 
 
-//Agregado por JSON
+//Agregado por JSONManager
 
 
-
+/**
+ * Retorna el tamaño del char array
+ */
 int size(char *ptr)
 {
     //variable used to access the subsequent array elements.
@@ -605,109 +1102,24 @@ int size(char *ptr)
 }
 
 
-static void runClient() {
-
-	/*
-	    * Descriptor del socket y buffer para datos
-	    */
-	    int Socket_Con_Servidor;
-	    char Cadena[1000];
-
-	    /*
-	    * Se abre la conexion con el servidor, pasando el nombre del ordenador
-	    * y el servicio solicitado.
-	    * "localhost" corresponde al nombre del mismo ordenador en el que
-	    * estamos corriendo. Esta dado de alta en /etc/hosts
-	    * "cpp_java" es un servicio dado de alta en /etc/services
-	    */
-
-	    Socket_Con_Servidor = Abre_Conexion_Inet ("localhost", "dkserver");
-	    if (Socket_Con_Servidor == 1)
-	    {
-	        printf ("No puedo establecer conexion con el servidor\n");
-	        exit (-1);
-	    }
-
-	    /*
-	    * Se prepara una cadena con 5 caracteres y se envia, 4 letras mas
-	    * el \0 que indica fin de cadena en C
-	    */
-
-	    /*
-	    * Se lee la informacion enviada por el servidor, que se supone es
-	    * una cadena de 6 caracteres.
-	    */
-
-	    int Longitud_Cadena;
-	    int Aux;
-
-	    while (Cadena!="Null"){
-
-	    	//PARA ENVIAR
-	    		        memset(Cadena, 0, sizeof Cadena); //LIMPIA BUFFER ANTES DE UTILIZARLO
-	    		        printf("Que desea contestar: "); //ESTO en caso que el usuario desee digitar un valor para enviar
-	    		        gets(Cadena); //cadena es el buffer, o el "mensaje a enviar"
-
-	    		        //Enviar json en Cadena
-
-
-	    		        Longitud_Cadena = size(Cadena)+1;
-	    		        Aux = htonl (Longitud_Cadena); /* Se mete en Aux el entero en formato red */
-	    		        /* Se envía Aux, que ya tiene los bytes en el orden de red */
-	    		        Escribe_Socket (Socket_Con_Servidor, (char *)&Aux, sizeof(Longitud_Cadena));
-	    		        Escribe_Socket (Socket_Con_Servidor, Cadena, Longitud_Cadena);
-	    		        //HASTA AQUI
-
-	        printf("Leyendo...");
-
-	        //PARA RECIBIR
-	        Lee_Socket (Socket_Con_Servidor, (char *)&Aux, sizeof(int)); /* La función nos devuelve en Aux el entero leido en formato red */
-	        Longitud_Cadena = ntohl (Aux); /* Guardamos el entero en formato propio en Longitud_Cadena */
-	        Lee_Socket (Socket_Con_Servidor, Cadena, Longitud_Cadena);
-	        //HASTA AQUI
-	        /*
-	        * Se escribe en pantalla la informacion recibida del servidor
-	        */
-	        printf ("Soy cliente, He recibido : %s\n", Cadena);
-
-	        //Recibe json en Cadena
-
-
-
-	    }
-
-	    /*
-	    * Se cierra el socket con el servidor
-	    */
-	    close (Socket_Con_Servidor);
-
-}
-
-
-
-
-
+/**
+ * Main de DonCEy Kong Jr Client.
+ */
 int main(int argc, char *argv[]){
 
 	//PRUEBAS JSON MANAGEMENT
 
 	//Para iniciar el juego
-	//startGame();
-
+	startGame();
 
 	//Para observar un juego
-	observeGame("000A");
-	/*
-	//Para actualizar el juego
-	//keyInput son las teclas
-	int keyInput[4] = {0,1,0,1};
-	updateGame("AXY87MJ6P9R8", keyInput);
-	*/
+	//observeGame("000A");
 
-	//runClient();
+	//Para actualizar el juego
+	updateGame("000A", keyInput);
+
 
 /*
-
 
 	//INTERFAZ
 	Juego juego;
@@ -722,6 +1134,14 @@ int main(int argc, char *argv[]){
 	    while(!done){
 			//Check for events
 			done = processEvents(window, &juego);
+
+			//printf("KeyInput:\n-> [%d,%d,%d,%d]",
+			//		keyInput[0],keyInput[1],keyInput[2],keyInput[3]);
+
+
+			 ///* LLamar funcion para enviar input o solo pedir la graficacion
+			 ///* si es solo un observador
+			updateGame("AXY87MJ6P9R8", keyInput);
 
 			//Render display
 			doRender(&juego);
