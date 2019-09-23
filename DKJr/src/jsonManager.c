@@ -14,7 +14,7 @@
 char* sendJSON(json_object *jObj){
 
 	//Test Print
-	printf("\n\nSe enviara el JSON necesario al servidor.\n\n");
+	//printf("\n\nSe enviara el JSON necesario al servidor.\n\n");
 
 	char hols[] = "VIENEJSON";
 
@@ -38,8 +38,9 @@ char* sendJSON(json_object *jObj){
 			vicio dado de alta en /etc/services
 	 */
 
+	///"192.168.100.68"
 
-	Socket_Con_Servidor = Abre_Conexion_Inet ("localhost", "dkserver");
+	Socket_Con_Servidor = Abre_Conexion_Inet ("192.168.100.68", "dkserver");
 	if (Socket_Con_Servidor == 1)
 		{
 		    printf ("No puedo establecer conexion con el servidor\n");

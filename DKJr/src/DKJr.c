@@ -16,22 +16,17 @@
 #include <arpa/inet.h>
 
 
+/**
+ *
+ * Interfaz de DonCEy Kong Jr.
+ *
+ */
 
-
-///Agregado por JSONManager
 
 /**
  * KeyInput array de teclas presionadas o no
  */
 int keyInput[4];   // = {0,1,0,1};
-
-
-
-
-
-
-
-
 
 
 /**********************************Interfaz**********************************/
@@ -56,6 +51,7 @@ typedef struct{
 	int x, y;
 	int sizeMult; 	//depende del tamaño de la pantalla
 	int state; 	//0 es el menu, 1 es el juego, 2 es el observador
+	char* code;
 
 	DKJr dkjr;
 	Fruit fruits[20];
@@ -75,6 +71,12 @@ typedef struct{
 	SDL_Texture *fruit2Image;
 	SDL_Texture *fruit3Image;
 } Juego;
+
+
+//Variable global de Juego
+Juego juego;
+
+
 
 int mouseInPlay();
 int mouseInObserver();
@@ -117,7 +119,14 @@ int processEvents(SDL_Window *window, Juego *juego){
 			SDL_GetMouseState(&mouseX, &mouseY);
 
 			if (mouseInPlay(juego, mouseX, mouseY)){
-			  juego->state = 1;
+				startGame();
+			} else if (mouseInObserver(juego, mouseX, mouseY)){
+				printf("Ingrese el codigo del juego al que desea unirse: ");
+
+				char* inCode;
+				gets(inCode);
+				juego->code = inCode;
+				observeGame(juego->code);
 			}
     	}
     }
@@ -129,41 +138,44 @@ int processEvents(SDL_Window *window, Juego *juego){
 	  //Teclas direccionales
 
 	  if(state[SDL_SCANCODE_UP]){
-	  		  juego->dkjr.y -= 1*juego->sizeMult;
 	  		keyInput[0] = 1;
 	  } else {
 		  keyInput[0] = 0;
 	  }
 
 	  if(state[SDL_SCANCODE_RIGHT]){
-	  		  juego->dkjr.x += 1*juego->sizeMult;
+	  		  //juergo->dkjr.x += 1*juego->sizeMult;
 	  		keyInput[1] = 1;
 	  } else {
 		  keyInput[1] = 0;
 	  }
 
 	  if(state[SDL_SCANCODE_DOWN]){
-	  		  juego->dkjr.y += 1*juego->sizeMult;
+	  		 // juego->dkjr.y += 1*juego->sizeMult;
 	  		keyInput[2] = 1;
 	  } else {
 		  keyInput[2] = 0;
 	  }
 
 	  if(state[SDL_SCANCODE_LEFT]){
-		  juego->dkjr.x -= 1*juego->sizeMult;
+		  //juego->dkjr.x -= 1*juego->sizeMult;
 		  keyInput[3] = 1;
 	  } else {
 		  keyInput[3] = 0;
 	  }
 
 
+	 int keyInputObserver[4] = {0,0,0,0};
 
+	  if (juego->state == 1) {
+		  updateGame(juego->code, keyInput);
+	  }
+	  else {
+		  updateGame(juego->code, keyInputObserver);
+	  }
 
-
-
-
-
-
+	  ///* LLamar funcion para enviar input o solo pedir la graficacion
+	  ///* si es solo un observador
 
 
   }
@@ -183,8 +195,6 @@ int mouseInPlay(Juego *juego, int mouseX, int mouseY){
 	if ((mouseY > playYUp && mouseY < playYDown) == 0){
 		return 0;
 	}
-	//Envia JSON de inicio
-	//startGame();
 	return 1;
 }
 
@@ -200,9 +210,6 @@ int mouseInObserver(Juego *juego, int mouseX, int mouseY){
 	if ((mouseY > obsYUp && mouseY < obsYDown) == 0){
 		return 0;
 	}
-	//Envia JSON para observar
-	//Necesita el codigo
-	//observeGame("AXY87MJ6P9R8");
 	return 1;
 }
 
@@ -228,7 +235,7 @@ void initializeGame(SDL_Window *window, Juego *juego){
 	juego->renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
 	///////////PRUEBA Cocodrilos
-    for (int i = 0; i < 20; i++){
+    /*for (int i = 0; i < 20; i++){
     	if (i < 19){			//----------------Número de crocs
         	juego->crocs[i].x = 15*i*juego->sizeMult;
         	juego->crocs[i].y = 8*i*juego->sizeMult;
@@ -249,15 +256,15 @@ void initializeGame(SDL_Window *window, Juego *juego){
     	else{
     		juego->crocs[i].x = -1;
     	}
-    }
+    }*/
 
     ///////////PRUEBA Frutas
-    for (int i = 0; i < 20; i++){
-		if (i < 19){			//----------------Número de crocs
+   /* for (int i = 0; i < 20; i++){
+		if (i < 19){			//----------------Número de fruits
 			juego->fruits[i].x = 20*i*juego->sizeMult;
 			juego->fruits[i].y = 20*i*juego->sizeMult;
 
-			if (i <= 3){
+			if (i <= 3) {
 				juego->fruits[i].type = 1;
 			}
 			if (i > 3 && i <= 7){
@@ -270,7 +277,7 @@ void initializeGame(SDL_Window *window, Juego *juego){
 		else{
 			juego->fruits[i].x = -1;
 		}
-    }
+    }*/
 }
 
 //Dibuja
@@ -348,7 +355,7 @@ void loadImages(Juego *juego){
 	//Carga de imágenes
 	menuSurface = IMG_Load("Resources/menu.png");
 	backSurface = IMG_Load("Resources/back.png");
-	dkjrSurface = IMG_Load("Resources/dkjr.png");
+	dkjrSurface = IMG_Load("Resources/dkjrIdle.png");
 	crocBlue1Surface = IMG_Load("Resources/crocBlue1.png");
 	crocBlue2Surface = IMG_Load("Resources/crocBlue2.png");
 	crocRed1Surface = IMG_Load("Resources/crocRed1.png");
@@ -498,8 +505,8 @@ void closeGame(SDL_Window *window, Juego *juego){
  */
 void showGameInfo(char* state, char* score, char* level, char* lives) {
 
-	printf("-> Showing Game Info\n");
-	printf("   - State: %s\n   - Score: %s\n   - Level: %s\n   - Lives: %s\n",state,score,level,lives);
+	//printf("-> Showing Game Info\n");
+	//printf("   - State: %s\n   - Score: %s\n   - Level: %s\n   - Lives: %s\n",state,score,level,lives);
 
 }
 
@@ -508,28 +515,40 @@ void showGameInfo(char* state, char* score, char* level, char* lives) {
  */
 void showDKJr(char* state, int posX, int posY) {
 
-	printf("-> Showing DKJr\n");
-	printf("   - State: %s\n   - PosX: %d\n   - PosY: %d\n",state,posX,posY);
+	juego.dkjr.x = posX;
+	juego.dkjr.y = posY;
+
+
+	//printf("-> Showing DKJr\n");
+	//printf("   - State: %s\n   - PosX: %d\n   - PosY: %d\n",state,posX,posY);
 
 }
 
 /**
  * Grafica un Cocodrilo.
  */
-void showCrocodile(char* color, int posX, int posY) {
+void showCrocodile(char* color, int posX, int posY, int i) {
 
-	printf("\nShowing Crocodile\n");
-	printf("   - Color: %s\n   - PosX: %d\n   - PosY: %d\n",color,posX,posY);
+	juego.crocs[i].x = posX;
+	juego.crocs[i].y = posY;
+	juego.crocs[i].type = color[0];
+
+	//printf("\nShowing Crocodile\n");
+	//printf("   - Color: %s\n   - PosX: %d\n   - PosY: %d\n",color,posX,posY);
 
 }
 
 /**
  * Grafica una Fruta.
  */
-void showFruit(char* type, int posX, int posY) {
+void showFruit(int type, int posX, int posY, int i) {
 
-	printf("\nShowing Fruit\n");
-	printf("   - Type: %s\n   - PosX: %d\n   - PosY: %d\n",type,posX,posY);
+	juego.fruits[i].x = posX;
+	juego.fruits[i].y = posY;
+	juego.fruits[i].type = type;
+
+	//printf("\nShowing Fruit\n");
+	//printf("   - Type: %d\n   - PosX: %d\n   - PosY: %d\n",type,posX,posY);
 
 }
 
@@ -538,8 +557,8 @@ void showFruit(char* type, int posX, int posY) {
  */
 void showFruitPoints(char* points, int posX, int posY) {
 
-	printf("\nShowing FruitPoints\n");
-	printf("   - Points: %s\n   - PosX: %d\n   - PosY: %d\n",points,posX,posY);
+	//printf("\nShowing FruitPoints\n");
+	//printf("   - Points: %s\n   - PosX: %d\n   - PosY: %d\n",points,posX,posY);
 
 
 }
@@ -613,9 +632,14 @@ void startGame(){
 		 * MESSAGEBOX
 		 */
 	} else {
-		printf("Start Game!\nCode: %s",permition);
+		//printf("Start Game!\nCode: %s",permition);
 		//Cambia el tipo de usuario a Jugador
 		userType = 1;
+
+		//Cambia el estado del juego.
+		juego.state = 1;
+		juego.code = permition;
+
 		/**
 		 * FUNCION PARA INICIAR JUEGO
 		 */
@@ -631,7 +655,7 @@ void startGame(){
  */
 void observeGame(char* code){
 
-	printf("\nSe desea observar un Game.\n\n");
+	//printf("\nSe desea observar un Game.\n\n");
 
 	///Se crea un objeto JSON
 	json_object *jObj = json_object_new_object();
@@ -658,6 +682,8 @@ void observeGame(char* code){
 		printf("Start Observing Game.");
 		//Cambia el tipo de usuario a
 		userType = 0;
+		//Cambia el estado del juego
+		juego.state = 1;
 		/**
 		 * FUNCION PARA OBSERVAR JUEGO
 		 */
@@ -744,7 +770,7 @@ void updateGame(char* code, int keyInput[]) {
 
 void updateGameAux(char* updateArray) {
 
-	printf("UpdateArray: %s\n\n", updateArray);
+	//printf("UpdateArray: %s\n\n", updateArray);
 
 	//Toma el String proveniente del Servidor
 	//Y es convertido a un JSON
@@ -805,7 +831,7 @@ void updateGameAux(char* updateArray) {
 	//Verifica si este existe para retornar su contenido
 	if (dataFromJSONArrayCrocodilesString != NULL) {
 
-		printf("\nCrocodilesArray: %s\n", dataFromJSONArrayCrocodilesString);
+		//printf("\nCrocodilesArray: %s\n", dataFromJSONArrayCrocodilesString);
 		/**
 		 * FUNCION DONDE ENVIAR A GRAFICAR
 		 */
@@ -826,7 +852,7 @@ void updateGameAux(char* updateArray) {
 	//Verifica si este existe para retornar su contenido
 	if (dataFromJSONArrayFruitsString != NULL) {
 
-		printf("\nFruitArray: %s\n", dataFromJSONArrayFruitsString);
+		//printf("\nFruitArray: %s\n", dataFromJSONArrayFruitsString);
 		/**
 		 * FUNCION DONDE ENVIAR A GRAFICAR
 		 */
@@ -867,7 +893,7 @@ void updateGameAux(char* updateArray) {
 	//Verifica si este existe para retornar su contenido
 	if (dataFromJSONArrayErrorString != NULL) {
 
-		printf("\nErrorArray: %s\n", dataFromJSONArrayErrorString);
+		//printf("\nErrorArray: %s\n", dataFromJSONArrayErrorString);
 	}
 
 }
@@ -954,8 +980,10 @@ void manageCrocodiles(json_object* jObj){
 	//Largo del array de Cocodrilos
 	int arrayLength = json_object_array_length(jObj);
 
+	int i;
+
 	//Se itera el array para obtener cada Cocodrilo
-	for(int i = 0; i < arrayLength; i++) {
+	for(i = 0; i < arrayLength; i++) {
 
 		//Toma el cocodrilo en la posicion i del Array
 		tempCrocodile = json_object_array_get_idx(jObj,i);
@@ -973,7 +1001,15 @@ void manageCrocodiles(json_object* jObj){
 		posY = json_object_get_int(third);
 
 		//Grafica al Cocodrilo
-		showCrocodile(color, posX, posY);
+		showCrocodile(color, posX, posY, i);
+
+	}
+
+	//Se itera el array para obtener cada Fruta
+	for(int j = i; j < 20; j++) {
+
+		//Grafica la Fruta
+		showCrocodile(color, -1, -1, j);
 
 	}
 
@@ -985,7 +1021,7 @@ void manageCrocodiles(json_object* jObj){
 void manageFruits(json_object* jObj){
 
 	//Informacion que viene en cada array de jObj
-	const char* type;
+	int type;
 	int posX;
 	int posY;
 
@@ -998,15 +1034,17 @@ void manageFruits(json_object* jObj){
 	//Largo del array de Frutas
 	int arrayLength = json_object_array_length(jObj);
 
+	int i;
+
 	//Se itera el array para obtener cada Fruta
-	for(int i = 0; i < arrayLength; i++) {
+	for(i = 0; i < arrayLength; i++) {
 
 		//Toma la fruta en la posicion i del Array
 		tempFruit = json_object_array_get_idx(jObj,i);
 
 		//Toma el tipo de Fruta
 		first = json_object_array_get_idx(tempFruit,0);
-		type = json_object_get_string(first);
+		type = json_object_get_int(first);
 
 		//Toma la posicion en x de la Fruta
 		second = json_object_array_get_idx(tempFruit,1);
@@ -1017,9 +1055,17 @@ void manageFruits(json_object* jObj){
 		posY = json_object_get_int(third);
 
 		//Grafica la Fruta
-		showFruit(type, posX, posY);
+		showFruit(type, posX, posY, i);
 
 	}
+
+	//Se itera el array para obtener cada Fruta
+		for(int j = i; j < 20; j++) {
+
+			//Grafica la Fruta
+			showFruit(type, -1, -1, j);
+
+		}
 
 }
 
@@ -1110,19 +1156,19 @@ int main(int argc, char *argv[]){
 	//PRUEBAS JSON MANAGEMENT
 
 	//Para iniciar el juego
-	startGame();
+	//startGame();
 
 	//Para observar un juego
 	//observeGame("000A");
 
 	//Para actualizar el juego
-	updateGame("000A", keyInput);
+	//updateGame("000A", keyInput);
 
 
-/*
+
 
 	//INTERFAZ
-	Juego juego;
+
 		SDL_Window *window = NULL;
 
 		initializeGame(window, &juego);
@@ -1130,18 +1176,16 @@ int main(int argc, char *argv[]){
 
 	    // The window is open: enter program loop (see SDL_PollEvent)
 	    int done = 0;
+
+
+
+
 	    //Event loop
 	    while(!done){
 			//Check for events
 			done = processEvents(window, &juego);
 
-			//printf("KeyInput:\n-> [%d,%d,%d,%d]",
-			//		keyInput[0],keyInput[1],keyInput[2],keyInput[3]);
 
-
-			 ///* LLamar funcion para enviar input o solo pedir la graficacion
-			 ///* si es solo un observador
-			updateGame("AXY87MJ6P9R8", keyInput);
 
 			//Render display
 			doRender(&juego);
@@ -1152,7 +1196,7 @@ int main(int argc, char *argv[]){
 
 	    closeGame(window, &juego);
 	    return 0;
-*/
+
 
     return 0;
 
